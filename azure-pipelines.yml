@@ -12,7 +12,7 @@ pr:
       - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-24.04
 
 # Temporary PostgreSQL database for automated testing.
 resources:
