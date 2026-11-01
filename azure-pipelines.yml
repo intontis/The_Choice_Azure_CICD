@@ -80,6 +80,12 @@ jobs:
       - script: |
           python db/seed.py
         displayName: Seed test database
+        env:
+          PGHOST: $(DB_HOST)
+          PGPORT: $(DB_PORT)
+          PGDATABASE: $(DB_NAME)
+          PGUSER: $(DB_USER)
+          PGPASSWORD: $(DB_PASSWORD)
 
       # Run the complete test suite.
       - script: |
