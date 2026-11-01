@@ -1,0 +1,22 @@
+# Python virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Testing and linting
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime files
+*.log
+instance/

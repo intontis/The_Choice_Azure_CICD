@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>The Choice — Your Prophecy</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <main class="page-shell">
+
+        <header class="site-header">
+            <h1>THE CHOICE</h1>
+        </header>
+
+        <section class="question-panel prophecy-panel">
+
+            <p class="step-label">THE PROPHET SPEAKS</p>
+
+            <h2>{{ prophecy.title }}</h2>
+
+            <p class="prophecy-message">
+                {{ prophecy.message }}
+            </p>
+
+            <p class="footer-note">
+                Your path: {{ path_signature }}
+            </p>
+
+            <a class="restart-link" href="{{ url_for('main.restart') }}">
+                BEGIN A NEW JOURNEY
+            </a>
+
+        </section>
+
+        <footer>
+            <p>THE CHOICE — YOUR JOURNEY, YOUR CONSEQUENCES.</p>
+        </footer>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='matrix-rain.js') }}" defer></script>
+
+</body>
+
+</html>

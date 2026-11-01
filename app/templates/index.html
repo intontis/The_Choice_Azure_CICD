@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>The Choice</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <main class="page-shell">
+
+        <header class="site-header">
+            <p class="eyebrow">AN INTERACTIVE JOURNEY</p>
+            <h1>THE CHOICE</h1>
+            <p class="intro">
+                Every decision reveals something.
+                Every path leads somewhere.
+            </p>
+        </header>
+
+        <section class="question-panel">
+
+            <p class="step-label">
+                DECISION {{ step_number }} OF 3
+            </p>
+
+            <h2>{{ question.text }}</h2>
+
+            <div class="options">
+
+                {% for option in question.options %}
+
+                <form class="option-form" method="POST" action="{{ url_for('main.submit_choice') }}">
+
+                    <input type="hidden" name="question_id" value="{{ question.id }}">
+
+                    <button type="submit" name="option_id" value="{{ option.id }}"
+                        class="option-card option-{{ option.code|lower }}">
+
+                        <span class="option-symbol">
+
+                            {% if question.code == "START" %}
+                            {% if option.code == "R" %}
+                            RED PILL
+                            {% else %}
+                            BLUE PILL
+                            {% endif %}
+                            {% else %}
+                            {{ option.code }}
+                            {% endif %}
+
+                        </span>
+
+                        <p>{{ option.text }}</p>
+
+                    </button>
+
+                </form>
+
+                {% endfor %}
+
+            </div>
+
+            <p class="footer-note">
+                Your journey begins with a single decision.
+            </p>
+
+        </section>
+
+        <footer>
+            <p>THE CHOICE — YOUR JOURNEY, YOUR CONSEQUENCES.</p>
+        </footer>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='matrix-rain.js') }}" defer></script>
+</body>
+
+</html>

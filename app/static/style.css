@@ -1,0 +1,273 @@
+:root {
+    color-scheme: dark;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #020603;
+    color: #e5f5e9;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background:
+        radial-gradient(ellipse at 50% 45%, #071a0c 0%, #020603 70%);
+}
+
+/* Main layout */
+.page-shell {
+    position: relative;
+    width: min(850px, 90%);
+    margin: 0 auto;
+    padding: 13vh 0 50px;
+}
+
+/* Minimal header */
+.site-header {
+    text-align: center;
+    margin-bottom: 65px;
+}
+
+.site-header .eyebrow,
+.site-header .intro {
+    display: none;
+}
+
+h1 {
+    margin: 0;
+    color: #eaffef;
+    font-size: clamp(3rem, 9vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-shadow:
+        0 0 10px rgba(0, 255, 65, 0.75),
+        0 0 35px rgba(0, 255, 65, 0.25);
+}
+
+/* Central question panel */
+.question-panel {
+    padding: clamp(25px, 6vw, 55px);
+    text-align: center;
+
+    background: rgba(2, 10, 5, 0.88);
+    border: 1px solid rgba(0, 255, 65, 0.35);
+    border-radius: 10px;
+
+    box-shadow:
+        0 0 25px rgba(0, 255, 65, 0.08),
+        inset 0 0 30px rgba(0, 255, 65, 0.025);
+
+    backdrop-filter: blur(8px);
+}
+
+.step-label {
+    display: none;
+}
+
+.question-panel h2 {
+    margin: 0 0 40px;
+    color: #f0fff3;
+    font-size: clamp(1.4rem, 4vw, 2rem);
+    line-height: 1.5;
+    font-weight: 500;
+}
+
+/* Red and Blue choices */
+.options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.option-card {
+    min-height: 165px;
+    padding: 30px 20px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+
+    border-radius: 8px;
+    background: rgba(10, 15, 18, 0.8);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.option-r {
+    border: 1px solid rgba(255, 45, 65, 0.65);
+    box-shadow: inset 0 0 20px rgba(255, 30, 50, 0.04);
+}
+
+.option-b {
+    border: 1px solid rgba(55, 125, 255, 0.65);
+    box-shadow: inset 0 0 20px rgba(55, 125, 255, 0.04);
+}
+
+.option-r:hover {
+    transform: translateY(-5px);
+    border-color: #ff405c;
+    box-shadow: 0 0 25px rgba(255, 45, 65, 0.2);
+}
+
+.option-b:hover {
+    transform: translateY(-5px);
+    border-color: #5595ff;
+    box-shadow: 0 0 25px rgba(55, 125, 255, 0.2);
+}
+
+.option-symbol {
+    font-size: 2.7rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+}
+
+.option-r .option-symbol {
+    color: #ff405c;
+    text-shadow: 0 0 18px rgba(255, 45, 65, 0.45);
+}
+
+.option-b .option-symbol {
+    color: #5595ff;
+    text-shadow: 0 0 18px rgba(55, 125, 255, 0.45);
+}
+
+.option-card p {
+    margin: 0;
+    color: #c5d2ca;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Remove secondary text */
+.footer-note,
+footer {
+    display: none;
+}
+
+/* Responsive layout */
+@media (max-width: 560px) {
+    .page-shell {
+        padding-top: 10vh;
+    }
+
+    .site-header {
+        margin-bottom: 40px;
+    }
+
+    .options {
+        grid-template-columns: 1fr;
+    }
+
+    .option-card {
+        min-height: 125px;
+    }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        animation: none;
+    }
+
+    .option-card {
+        transition: none;
+    }
+}
+
+/* Fix Matrix background layering */
+body {
+    position: relative;
+    isolation: isolate;
+}
+
+/* Keep the background effects visible, but behind the page content */
+body::before,
+body::after {
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Keep the actual page content above the Matrix effect */
+body>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* Matrix rain canvas */
+body {
+    position: relative;
+    isolation: isolate;
+}
+
+.matrix-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.45;
+}
+
+/* Keep application content above the canvas */
+body>* {
+    position: relative;
+    z-index: 1;
+}
+
+/* Make option forms fit the existing choice layout */
+.option-form {
+    margin: 0;
+    min-width: 0;
+}
+
+/* Reset browser button defaults while keeping existing card styling */
+button.option-card {
+    display: block;
+    width: 100%;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+/* Keyboard accessibility */
+button.option-card:focus-visible {
+    outline: 2px solid #00ff41;
+    outline-offset: 4px;
+}
+
+/* Prophecy page */
+.prophecy-panel {
+    text-align: center;
+}
+
+.prophecy-message {
+    line-height: 1.8;
+    margin: 24px auto;
+    max-width: 650px;
+}
+
+.restart-link {
+    display: inline-block;
+    margin-top: 24px;
+    padding: 12px 24px;
+    color: #00ff41;
+    border: 1px solid #008f11;
+    text-decoration: none;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.restart-link:hover,
+.restart-link:focus-visible {
+    background: rgba(0, 255, 65, 0.12);
+    box-shadow: 0 0 16px rgba(0, 255, 65, 0.35);
+}
