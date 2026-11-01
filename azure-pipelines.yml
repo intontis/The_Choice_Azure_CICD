@@ -1,0 +1,68 @@
+
+# The Choice - Azure Pipelines CI
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+# Temporary PostgreSQL database for automated testing.
+resources:
+  containers:
+    - container: postgres
+      image: postgres:16
+      env:
+        POSTGRES_DB: the_choice
+        POSTGRES_USER: the_choice_app
+        POSTGRES_PASSWORD: pipeline-test-password
+      ports:
+        - 5432:5432
+      options: >-
+        --health-cmd "pg_isready -U the_choice_app -d the_choice"
+        --health-interval 10s
+        --health-timeout 5s
+        --health-retries 5
+
+# Test-only application configuration.
+variables:
+  DB_HOST: 127.0.0.1
+  DB_PORT: '5432'
+  DB_NAME: the_choice
+  DB_USER: the_choice_app
+  DB_PASSWORD: pipeline-test-password
+  FLASK_SECRET_KEY: ci-only-test-key-not-for-production
+
+jobs:
+  - job: Test
+    displayName: Run application tests
+
+    services:
+      postgres: postgres
+
+    steps:
+      - checkout: self
+
+      # Select Python 3.12.
+      - task: UsePythonVersion@0
+        displayName: Use Python 3.12
+        inputs:
+          versionSpec: '3.12'
+
+      # Install project dependencies.
+      - script: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+        displayName: Install Python dependencies
+
+      # Run the complete test suite.
+      - script: |
+          python -m pytest -q
+        displayName: Run pytest
