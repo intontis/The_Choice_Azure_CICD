@@ -62,6 +62,25 @@ jobs:
           python -m pip install -r requirements-dev.txt
         displayName: Install Python dependencies
 
+      # Install PostgreSQL client and initialize database schema.
+      - script: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+          PGPASSWORD="$DB_PASSWORD" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            -v ON_ERROR_STOP=1 \
+            -f db/schema.sql
+        displayName: Initialize PostgreSQL schema
+
+      # Populate database with initial test data.
+      - script: |
+          python db/seed.py
+        displayName: Seed test database
+
       # Run the complete test suite.
       - script: |
           python -m pytest -q
