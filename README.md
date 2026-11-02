@@ -90,7 +90,7 @@ After successful testing, Azure Pipelines:
 Image naming convention:
 
 ```text
-thechoice05e289c7.azurecr.io/the-choice:<BUILD_ID>
+<your-acr-name>.azurecr.io/the-choice:<BUILD_ID>
 ```
 
 **3. Automated GitOps Update**
@@ -172,7 +172,6 @@ The_Choice_Azure_CICD/
 │
 ├── .dockerignore
 ├── .gitignore
-├── .env
 ├── Architecture.md
 ├── Questions.md
 ├── Dockerfile
@@ -370,9 +369,9 @@ The project uses the following Azure resources:
 
 | Resource | Configuration |
 |---|---|
-| Resource Group | `azurecicd` |
-| AKS Cluster | `azuredevops` |
-| Container Registry | `thechoice05e289c7` |
+| Resource Group | Azure Resource Group |
+| AKS Cluster | Azure Kubernetes Service |
+| Container Registry | Azure Container Registry |
 | Container Registry Tier | Basic |
 | Kubernetes Namespace | `the-choice` |
 | Container Image | `the-choice` |
