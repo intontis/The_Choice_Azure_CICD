@@ -154,7 +154,20 @@ jobs:
 
           echo "Pushing GitOps manifest update to GitHub..."
 
-          AUTH_HEADER="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 -w 0)"
+          if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+            echo "ERROR: GITHUB_TOKEN was not supplied."
+            exit 1
+          fi
+
+          echo "Checking GitHub token access..."
+
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/intontis/The_Choice_Azure_CICD \
+            | python3 -c "import json,sys; d=json.load(sys.stdin); print('Repository:', d.get('full_name')); print('Account push permission:', d.get('permissions', {}).get('push'))"
+
+          AUTH_HEADER="$(printf 'intontis:%s' "$GITHUB_TOKEN" | base64 -w 0)"
 
           git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
             push origin HEAD:refs/heads/main
