@@ -109,8 +109,17 @@ jobs:
           inlineScript: |
             set -euo pipefail
 
-            az acr build \
-              --registry thechoice05e289c7 \
-              --image the-choice:$(Build.BuildId) \
-              --file Dockerfile \
-              .
+            ACR_NAME="thechoice05e289c7"
+            IMAGE="${ACR_NAME}.azurecr.io/the-choice:$(Build.BuildId)"
+
+            echo "Checking Docker engine..."
+            docker info
+
+            echo "Authenticating to ACR..."
+            az acr login --name "$ACR_NAME"
+
+            echo "Building image: $IMAGE"
+            docker build --pull --file Dockerfile --tag "$IMAGE" .
+
+            echo "Pushing image: $IMAGE"
+            docker push "$IMAGE"
