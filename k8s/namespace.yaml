@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: the-choice
+  labels:
+    app.kubernetes.io/name: the-choice
+    app.kubernetes.io/part-of: the-choice

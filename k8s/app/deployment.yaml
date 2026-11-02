@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: the-choice
+  labels:
+    app.kubernetes.io/name: the-choice
+    app.kubernetes.io/part-of: the-choice
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: the-choice
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: the-choice
+        app.kubernetes.io/part-of: the-choice
+
+    spec:
+      containers:
+        - name: web
+          image: thechoice05e289c7.azurecr.io/the-choice:v0.1.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+
+          envFrom:
+            - configMapRef:
+                name: the-choice-config
+
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: the-choice-secrets
+                  key: DB_PASSWORD
+
+            - name: FLASK_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: the-choice-secrets
+                  key: FLASK_SECRET_KEY
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL

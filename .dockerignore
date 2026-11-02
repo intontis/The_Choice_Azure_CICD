@@ -1,0 +1,32 @@
+# Git
+.git/
+.gitignore
+
+# Python environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Testing
+tests/
+.coverage
+htmlcov/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# Documentation
+README.md
+Architecture.md
+Questions.md
+
+# Editor configuration
+.vscode/
+.idea/

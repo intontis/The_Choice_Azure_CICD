@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: the-choice
+
+spec:
+  serviceName: postgres
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: the-choice
+
+    spec:
+      securityContext:
+        fsGroup: 999
+        fsGroupChangePolicy: OnRootMismatch
+
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: postgres
+          image: docker.io/library/postgres:16
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: postgresql
+              containerPort: 5432
+              protocol: TCP
+
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_NAME
+
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_USER
+
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: the-choice-secrets
+                  key: DB_PASSWORD
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+            periodSeconds: 5
+            failureThreshold: 30
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+
+            - name: postgres-init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-data
+
+        - name: postgres-init
+          configMap:
+            name: postgres-init

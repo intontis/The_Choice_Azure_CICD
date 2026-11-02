@@ -1,0 +1,58 @@
+services:
+  db:
+    image: docker.io/library/postgres:16
+    container_name: the-choice-db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:-the_choice}
+      POSTGRES_USER: ${DB_USER:-the_choice_app}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro,Z
+
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+  web:
+    image: localhost/the-choice:dev
+    container_name: the-choice-web
+    build:
+      context: .
+
+    restart: unless-stopped
+
+    environment:
+      # Application database configuration.
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-the_choice}
+      DB_USER: ${DB_USER:-the_choice_app}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+
+      # Flask configuration.
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY:?FLASK_SECRET_KEY must be set in .env}
+
+      # Psycopg configuration for db/seed.py.
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${DB_NAME:-the_choice}
+      PGUSER: ${DB_USER:-the_choice_app}
+      PGPASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in .env}
+
+    ports:
+      - "127.0.0.1:8000:8000"
+
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: the-choice
+
+resources:
+  - k8s/namespace.yaml
+  - k8s/app/configmap.yaml
+  - k8s/postgres/pvc.yaml
+  - k8s/postgres/service.yaml
+  - k8s/postgres/statefulset.yaml
+  - k8s/jobs/seed-job.yaml
+  - k8s/app/deployment.yaml
+  - k8s/app/service.yaml
+
+configMapGenerator:
+  - name: postgres-init
+    files:
+      - 01-schema.sql=db/schema.sql

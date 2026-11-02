@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: the-choice
+  labels:
+    app.kubernetes.io/name: the-choice
+    app.kubernetes.io/part-of: the-choice
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app.kubernetes.io/name: the-choice
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: the-choice-config
+
+data:
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_NAME: the_choice
+  DB_USER: the_choice_app

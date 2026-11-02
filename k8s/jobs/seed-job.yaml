@@ -1,0 +1,100 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: the-choice-seed
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "1"
+
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: the-choice-seed
+
+    spec:
+      restartPolicy: Never
+
+      # Wait until PostgreSQL accepts connections.
+      initContainers:
+        - name: wait-for-postgres
+          image: docker.io/library/postgres:16
+          command:
+            - /bin/sh
+            - -c
+            - |
+              until pg_isready \
+                -h postgres \
+                -p 5432 \
+                -U "$PGUSER" \
+                -d "$PGDATABASE"; do
+                echo "Waiting for PostgreSQL..."
+                sleep 3
+              done
+              echo "PostgreSQL is ready."
+
+          env:
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_USER
+
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_NAME
+
+      containers:
+        - name: seed
+          image: thechoice05e289c7.azurecr.io/the-choice:v0.1.0
+          imagePullPolicy: IfNotPresent
+
+          command:
+            - python
+            - db/seed.py
+
+          env:
+            - name: PGHOST
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_HOST
+
+            - name: PGPORT
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_PORT
+
+            - name: PGDATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_NAME
+
+            - name: PGUSER
+              valueFrom:
+                configMapKeyRef:
+                  name: the-choice-config
+                  key: DB_USER
+
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: the-choice-secrets
+                  key: DB_PASSWORD
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
