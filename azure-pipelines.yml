@@ -91,3 +91,26 @@ jobs:
       - script: |
           python -m pytest -q
         displayName: Run pytest
+
+  - job: BuildAndPush
+    displayName: Build and push application image
+    dependsOn: Test
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+    steps:
+      - checkout: self
+
+      - task: AzureCLI@2
+        displayName: Build and push image to ACR
+        inputs:
+          azureSubscription: 'the-choice-azure'
+          scriptType: bash
+          scriptLocation: inlineScript
+          inlineScript: |
+            set -euo pipefail
+
+            az acr build \
+              --registry thechoice05e289c7 \
+              --image the-choice:$(Build.BuildId) \
+              --file Dockerfile \
+              .
