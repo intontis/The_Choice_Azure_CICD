@@ -159,22 +159,36 @@ jobs:
             exit 1
           fi
 
-          echo "Checking GitHub token access..."
+          # Create a temporary Git credential helper.
+          ASKPASS_SCRIPT="$(mktemp)"
+          trap 'rm -f "$ASKPASS_SCRIPT"; unset GITHUB_TOKEN' EXIT
 
-          curl --fail --silent --show-error \
-            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-              https://api.github.com/repos/intontis/The_Choice_Azure_CICD \
-            | python3 -c "import json,sys; d=json.load(sys.stdin); print('Repository:', d.get('full_name')); print('Account push permission:', d.get('permissions', {}).get('push'))"
+          cat > "$ASKPASS_SCRIPT" <<'EOF'
+          #!/usr/bin/env bash
 
-          AUTH_HEADER="$(printf 'intontis:%s' "$GITHUB_TOKEN" | base64 -w 0)"
+          case "${1:-}" in
+            *Username*)
+              printf '%s\n' 'intontis'
+              ;;
+            *Password*)
+              printf '%s\n' "${GITHUB_TOKEN:?GITHUB_TOKEN is not set}"
+              ;;
+            *)
+              exit 1
+              ;;
+          esac
+          EOF
 
-          git -c http.extraheader="AUTHORIZATION: basic ${AUTH_HEADER}" \
-            push origin HEAD:refs/heads/main
+          chmod 700 "$ASKPASS_SCRIPT"
 
-          unset AUTH_HEADER
+          # Let Git request credentials from the temporary helper.
+          export GIT_ASKPASS="$ASKPASS_SCRIPT"
+          export GIT_TERMINAL_PROMPT=0
+
+          git -c credential.helper= push origin HEAD:refs/heads/main
 
           echo "GitOps manifest successfully updated."
+
         displayName: Update GitOps manifest and push to GitHub
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
