@@ -367,11 +367,15 @@ docker compose up -d web
 
 Check the running containers:
 
+With Podman Compose:
 ```bash
 podman compose ps
 ```
 
-For Docker Compose, use `docker compose ps`.
+With Docker Compose:
+```bash
+docker compose ps
+```
 
 Open the application at:
 
@@ -381,11 +385,17 @@ Open the application at:
 
 Stop and remove the Compose containers while retaining the named PostgreSQL volume:
 
+With Podman Compose:
+
 ```bash
 podman compose down
 ```
 
-For Docker Compose, use `docker compose down`.
+With Docker Compose:
+
+```bash
+docker compose down
+```
 
 The named database volume is retained when using `down` without `-v`, so the containerized PostgreSQL data can be used again when the stack is restarted. To remove the containers and the local PostgreSQL volume, use `podman compose down -v` (or `docker compose down -v`). **This permanently deletes the data stored in that Compose volume.**
 
