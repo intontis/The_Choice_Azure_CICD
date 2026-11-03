@@ -2,9 +2,9 @@
 
 ![The Choice application homepage](docs/images/image.png)
 
-An interactive, branching-choice web application built with Python, Flask and PostgreSQL, deployed to Azure Kubernetes Service (AKS) using Azure Pipelines, Azure Container Registry (ACR) and Argo CD.
+An interactive, branching-choice web application built with Python, Flask and PostgreSQL. The application can be run locally in two ways: directly with Python and PostgreSQL, or as a containerized stack with Compose. The project also includes an Azure Kubernetes Service (AKS) deployment used to demonstrate CI/CD and GitOps.
 
-This project is a hands-on DevOps portfolio project demonstrating automated testing, containerization, continuous integration, continuous delivery and GitOps-based Kubernetes deployments.
+This is a hands-on DevOps portfolio project demonstrating automated testing, containerization, continuous integration, container image publishing and GitOps-based Kubernetes delivery.
 
 ## Overview
 
@@ -12,7 +12,7 @@ The Choice presents visitors with a sequence of decisions. Each answer determine
 
 The application uses anonymous visitor sessions and stores questions, options, journeys, responses and prophecy mappings in PostgreSQL.
 
-Beyond application development, the project demonstrates an automated cloud-native delivery workflow. Every successful push to the `main` branch triggers automated testing, container image creation, registry publishing and a GitOps manifest update. Argo CD detects the updated configuration and deploys the new application version to AKS.
+Beyond application development, the project demonstrates an automated cloud-native delivery workflow. Azure Pipelines validates changes, builds and publishes a container image, and updates the Kubernetes deployment manifest in GitHub. Argo CD monitors the repository and synchronizes the desired configuration to AKS when that cluster is running.
 
 ## Features
 
@@ -26,66 +26,68 @@ Beyond application development, the project demonstrates an automated cloud-nati
 - Matrix-inspired animated background using JavaScript Canvas.
 - Automated application tests using pytest.
 
-### DevOps and Infrastructure
+### DevOps and infrastructure
 
 - Automated CI pipeline using Azure Pipelines.
 - PostgreSQL service container for isolated integration testing.
 - Docker-based application containerization.
 - Non-root application execution inside the container.
-- Automated Docker image builds and pushes to Azure Container Registry.
+- Automated Docker image builds and pushes to Azure Container Registry (ACR).
 - Unique container image tags based on Azure Pipeline Build IDs.
 - Azure authentication using Workload Identity Federation.
 - Automated Kubernetes manifest updates through GitHub.
 - GitOps deployment management using Argo CD.
-- Kubernetes application deployment and PostgreSQL StatefulSet on AKS.
+- Kubernetes application Deployment and PostgreSQL StatefulSet on AKS.
 - Persistent PostgreSQL storage using Azure managed disks.
 - Kubernetes ConfigMaps and Secrets for application configuration.
 
 ## Architecture
 
-The project uses GitHub as the source of truth for both application code and Kubernetes deployment configuration.
+GitHub is the source of truth for the application code and Kubernetes deployment configuration. The repository supports two local ways to run the application. Separately, the maintainer's Azure environment demonstrates automated cloud delivery.
 
 ### Automated CI/CD and GitOps workflow
 
 ```mermaid
 flowchart TD
-    A["Developer pushes code to GitHub"] --> B["Azure Pipelines"]
-    B --> C["Start PostgreSQL test database"]
-    C --> D["Initialize schema and seed data"]
-    D --> E["Run pytest"]
-    E --> F{"Tests successful?"}
-    F -->|No| G["Pipeline fails"]
-    F -->|Yes, main branch| H["Build Docker image"]
-    H --> I["Push image to Azure Container Registry"]
-    I --> J["Update Kubernetes deployment manifest"]
-    J --> K["Commit and push manifest to GitHub"]
-    K --> L["Argo CD detects Git change"]
-    L --> M["Synchronize Kubernetes resources"]
-    M --> N["AKS deploys new application version"]
+    A[Developer pushes code to GitHub] --> B[Azure Pipelines]
+    B --> C[Start temporary PostgreSQL test database]
+    C --> D[Initialize schema and seed data]
+    D --> E[Run pytest]
+    E --> F{Tests successful?}
+    F -->|No| G[Pipeline fails]
+    F -->|Yes, main branch| H[Build Docker image]
+    H --> I[Push image to Azure Container Registry]
+    I --> J[Update Kubernetes deployment manifest]
+    J --> K[Commit and push manifest to GitHub]
+    K --> L[Argo CD detects Git change]
+    L --> M[Synchronize Kubernetes resources]
+    M --> N[AKS deploys new application version]
 ```
 
 ### Pipeline stages
 
-**1. Continuous Integration — Test**
+#### 1. Continuous Integration — Test
 
-Azure Pipelines runs on GitHub changes targeting `main` and validates pull requests.
+Azure Pipelines validates pull requests targeting `main` and runs the configured pipeline for changes to `main`.
 
 The test job:
 
-- Starts a temporary PostgreSQL 16 container.
-- Installs Python 3.12 and application development dependencies.
-- Initializes the database using `db/schema.sql`.
-- Populates the database using `db/seed.py`.
+- Starts a temporary PostgreSQL 16 container dedicated to the pipeline run.
+- Installs Python 3.12 and the application development dependencies.
+- Initializes the test database using `db/schema.sql`.
+- Populates the test database using `db/seed.py`.
 - Executes the pytest test suite.
 
-The container image build is performed only after successful tests on the `main` branch. Pull-request validation does not publish images or deploy changes.
+The pipeline does not use the persistent PostgreSQL database running in AKS for these tests. The test database is temporary and isolated from the application databases used by local development and the Azure deployment.
 
-**2. Container Build and Publishing**
+The container image build runs only after successful tests on `main`. Pull-request validation does not publish images or deploy changes.
 
-After successful testing, Azure Pipelines:
+#### 2. Container build and publishing
+
+After successful testing on `main`, Azure Pipelines:
 
 - Authenticates to Azure using an Azure Resource Manager service connection with Workload Identity Federation.
-- Builds the application image using the project Dockerfile.
+- Builds the application image using the project `Dockerfile`.
 - Pushes the resulting image to Azure Container Registry.
 - Uses the Azure Pipeline Build ID as a unique image tag.
 
@@ -95,7 +97,7 @@ Image naming convention:
 <your-acr-name>.azurecr.io/the-choice:<BUILD_ID>
 ```
 
-**3. Automated GitOps Update**
+#### 3. Automated GitOps update
 
 After publishing the image, the pipeline:
 
@@ -105,19 +107,19 @@ After publishing the image, the pipeline:
 
 GitHub therefore remains the source of truth for the desired Kubernetes deployment state.
 
-**4. Argo CD Synchronization**
+#### 4. Argo CD synchronization
 
-Argo CD monitors the GitHub repository and automatically detects changes to the Kubernetes manifests.
+Argo CD runs inside the AKS cluster and monitors the GitHub repository. When a new image tag is committed, Argo CD detects the manifest change and synchronizes the desired configuration with AKS.
 
-When a new image tag is committed, Argo CD synchronizes the desired configuration with the AKS cluster.
+Argo CD can only perform this synchronization while the AKS cluster is running and reachable. If the maintainer stops AKS to reduce compute costs, the local application options remain available, but the cloud-hosted deployment is not running and will not receive updates until the cluster is started again.
 
-**5. Kubernetes Deployment**
+#### 5. Kubernetes deployment
 
-Azure Kubernetes Service runs the application and its PostgreSQL database.
+Azure Kubernetes Service runs the application and its PostgreSQL database when the maintainer's cluster is active.
 
-Kubernetes manages application replicas, container health checks, internal service discovery and persistent database storage.
+Kubernetes manages the application Deployment, internal Service discovery, PostgreSQL StatefulSet and persistent database storage. The database uses a PersistentVolumeClaim backed by Azure managed storage.
 
-## Technology Stack
+## Technology stack
 
 | Area | Technology |
 |---|---|
@@ -137,7 +139,7 @@ Kubernetes manages application replicas, container health checks, internal servi
 | Infrastructure authentication | Microsoft Entra ID, Workload Identity Federation |
 | Deployment configuration | Kubernetes YAML, Kustomize |
 
-## Project Structure
+## Project structure
 
 ```text
 The_Choice_Azure_CICD/
@@ -153,6 +155,10 @@ The_Choice_Azure_CICD/
 ├── db/
 │   ├── schema.sql
 │   └── seed.py
+│
+├── docs/
+│   └── images/
+│       └── image.png
 │
 ├── tests/
 │
@@ -185,39 +191,42 @@ The_Choice_Azure_CICD/
 └── run.py
 ```
 
-## Local Development
+## Run locally
 
-### Prerequisites
+The repository provides two local runtime options. Both use a local PostgreSQL database, but **they are separate database instances**. Data created in one option is not automatically shared with the other.
 
-- Python 3.12
-- PostgreSQL 16
-- Git
+### Option 1 — Run with Python and local PostgreSQL
 
-### 1. Clone the repository
+This option runs Flask directly in your Python environment. PostgreSQL must be installed and running separately.
+
+#### Prerequisites
+
+- Python 3.12.
+- PostgreSQL 16.
+- Git.
+
+#### 1. Clone the repository
 
 ```bash
 git clone https://github.com/intontis/The_Choice_Azure_CICD.git
-
 cd The_Choice_Azure_CICD
 ```
 
-### 2. Create and activate a virtual environment
+#### 2. Create and activate a virtual environment
 
 ```bash
 python3 -m venv .venv
-
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+#### 3. Install dependencies
 
 ```bash
 python -m pip install --upgrade pip
-
 python -m pip install -r requirements-dev.txt
 ```
 
-### 4. Configure environment variables
+#### 4. Configure environment variables
 
 Create a local `.env` file in the project root:
 
@@ -231,13 +240,13 @@ DB_USER=the_choice_app
 DB_PASSWORD=your_local_database_password
 ```
 
+Create the PostgreSQL database and application user using your local PostgreSQL administration method. Ensure the credentials and database name match the values in `.env`.
+
 Never commit `.env` or other credentials to GitHub.
 
-### 5. Initialize the database
+#### 5. Initialize the database
 
-Ensure PostgreSQL is running and that the application database and user exist.
-
-Load the local environment variables:
+Ensure PostgreSQL is running. Load the local environment variables into the current shell:
 
 ```bash
 set -a
@@ -257,7 +266,7 @@ PGPASSWORD="$DB_PASSWORD" psql \
   -f db/schema.sql
 ```
 
-Populate the database:
+Populate the database with the initial application data:
 
 ```bash
 PGHOST="$DB_HOST" \
@@ -268,7 +277,9 @@ PGPASSWORD="$DB_PASSWORD" \
 python db/seed.py
 ```
 
-### 6. Run the application
+The seed script initializes the database content. Its conflict-handling behaviour determines whether running it again updates existing records or leaves them unchanged. Review `db/seed.py` before rerunning it against a database that already contains data.
+
+#### 6. Run the application
 
 ```bash
 python run.py
@@ -276,32 +287,82 @@ python run.py
 
 Open the application at:
 
-http://127.0.0.1:5000
+**http://127.0.0.1:5000**
 
-## Local Containerized Development
+Stop the development server with `Ctrl+C` in the terminal where it is running.
 
-The project also includes a Compose configuration for running Flask and PostgreSQL in containers.
+### Option 2 — Run with Podman Compose or Docker Compose
 
-The configuration works with Podman Compose and Docker Compose.
+This option runs Flask and PostgreSQL as separate containers. It avoids installing the application's Python dependencies and PostgreSQL server directly on the host, although Podman or Docker and Compose support are required.
 
-Ensure your `.env` file contains the required database credentials and Flask secret key.
+#### Prerequisites
 
-Start PostgreSQL:
+- Podman with Compose support, or Docker with Docker Compose.
+- Git.
+
+#### 1. Clone the repository
+
+```bash
+git clone https://github.com/intontis/The_Choice_Azure_CICD.git
+cd The_Choice_Azure_CICD
+```
+
+#### 2. Configure environment variables
+
+Create a local `.env` file in the project root. Use the variables and values expected by `compose.yaml` for the PostgreSQL service and Flask application. For example:
+
+```dotenv
+FLASK_SECRET_KEY=replace_with_a_secure_random_value
+
+DB_NAME=the_choice
+DB_USER=the_choice_app
+DB_PASSWORD=your_local_database_password
+```
+
+Never commit `.env` or other credentials to GitHub.
+
+#### 3. Start PostgreSQL
+
+With Podman Compose:
 
 ```bash
 podman compose up -d db
 ```
 
-Populate the database:
+With Docker Compose, use:
+
+```bash
+docker compose up -d db
+```
+
+#### 4. Populate the database
+
+With Podman Compose:
 
 ```bash
 podman compose run --rm web python db/seed.py
 ```
 
-Start the application:
+With Docker Compose:
+
+```bash
+docker compose run --rm web python db/seed.py
+```
+
+The Compose configuration must make the schema available to the database and the seed process. Review `compose.yaml` if you change service names or database configuration.
+
+#### 5. Start the application
+
+With Podman Compose:
 
 ```bash
 podman compose up -d web
+```
+
+With Docker Compose:
+
+```bash
+docker compose up -d web
 ```
 
 Check the running containers:
@@ -310,41 +371,56 @@ Check the running containers:
 podman compose ps
 ```
 
+For Docker Compose, use `docker compose ps`.
+
 Open the application at:
 
-http://127.0.0.1:8000
+**http://127.0.0.1:8000**
 
-Stop the containers without deleting the database volume:
+#### 6. Stop the containers
+
+Stop and remove the Compose containers while retaining the named PostgreSQL volume:
 
 ```bash
 podman compose down
 ```
 
-To remove the containers and the local PostgreSQL volume, use `podman compose down -v`. This permanently removes the local containerized database data.
+For Docker Compose, use `docker compose down`.
 
-## Running Tests
+The named database volume is retained when using `down` without `-v`, so the containerized PostgreSQL data can be used again when the stack is restarted. To remove the containers and the local PostgreSQL volume, use `podman compose down -v` (or `docker compose down -v`). **This permanently deletes the data stored in that Compose volume.**
 
-Run the test suite from the project root:
+## Database and data persistence
+
+The two local options use different PostgreSQL instances:
+
+- **Python + local PostgreSQL:** data is stored in the PostgreSQL instance configured in the local `.env` file. Its persistence and backups are managed by that local PostgreSQL installation.
+- **Compose:** data is stored in the PostgreSQL container's named volume defined by `compose.yaml`. `compose down` retains that volume; `compose down -v` removes it.
+
+The Azure PostgreSQL database is a third, separate database used by the maintainer's AKS deployment. It is not shared with either local option. The temporary PostgreSQL service used by Azure Pipelines is a fourth, isolated test database and is discarded after the pipeline job.
+
+The seed script is used to initialize database content. Changing `db/seed.py` in Git does not directly modify an existing database. To change existing records, the seed logic must explicitly support updating them, or a separate database update/migration must be run against the intended database. Always back up data before making destructive database changes.
+
+## Running tests
+
+Run the test suite from the project root with the virtual environment activated:
 
 ```bash
 python -m pytest -q
 ```
 
-The database integration tests require PostgreSQL to be available with the expected test database schema and credentials.
+The database integration tests require PostgreSQL to be available with the expected test database schema and credentials. Azure Pipelines performs database initialization and seeding automatically before executing the test suite.
 
-Azure Pipelines performs the database initialization and seeding automatically before executing the test suite.
+## Cloud deployment architecture — maintainer environment
 
-## Kubernetes Deployment
+The repository also contains Kubernetes manifests used for the project's Azure deployment. This is a demonstration of the DevOps delivery architecture, not a third public run option or a permanently hosted public demo.
 
-The Kubernetes configuration is maintained in the GitHub repository and deployed through Argo CD.
-
-The `k8s/` directory contains:
+The Kubernetes configuration is maintained in GitHub and deployed through Argo CD to the maintainer's AKS cluster. The `k8s/` directory contains:
 
 | Resource | Purpose |
 |---|---|
 | Namespace | Isolates application resources in `the-choice`. |
-| ConfigMap | Supplies non-sensitive application database configuration. |
-| Secret | Stores database password and Flask secret key. |
+| ConfigMap | Supplies non-sensitive application configuration. |
+| Secret | Stores the database password and Flask secret key; values are provisioned separately from Git. |
 | Deployment | Runs the Flask application container. |
 | Service | Exposes the application internally within Kubernetes. |
 | StatefulSet | Runs PostgreSQL. |
@@ -353,51 +429,57 @@ The `k8s/` directory contains:
 
 Sensitive Kubernetes configuration is provisioned separately from Git and is not stored in the repository.
 
-Argo CD monitors the repository root and synchronizes the Kubernetes resources to AKS when the desired configuration changes.
+Argo CD runs inside AKS, monitors the repository and synchronizes Kubernetes resources when the cluster is running. The maintainer may stop the AKS cluster to reduce compute costs. When it is stopped, the cloud deployment is unavailable and Argo CD cannot synchronize changes until the cluster is started again. The local Python and Compose options remain independent and can still be used.
 
-For local access to the deployed application, use:
+The AKS environment is maintained separately from the public repository and may be stopped when it is not being used. No public application URL is provided as part of this repository. The two supported ways for visitors to run and explore the application are the local Python/PostgreSQL setup and the local Compose setup described above.
 
-```bash
-kubectl port-forward -n the-choice svc/the-choice 8081:80
-```
+To deploy this project to another Kubernetes cluster, a user must provide their own cluster, container registry, credentials, Kubernetes Secrets and Argo CD configuration. The repository does not provide a hosted Azure environment to people who clone it.
 
-Then open:
+## Azure CI/CD configuration
 
-http://localhost:8081
+The Azure DevOps pipeline and cloud resources belong to the maintainer's environment. Cloning the repository and running either local option does **not** require an Azure subscription, Azure DevOps service connection, GitHub Personal Access Token or access to the maintainer's AKS cluster.
 
-## Azure Infrastructure
+For the maintainer's automated deployment workflow:
 
-The project uses the following Azure resources:
+- Azure Pipelines uses an Azure Resource Manager service connection with Workload Identity Federation to authenticate to Azure.
+- The pipeline uses a GitHub token stored as the secret pipeline variable `GITHUB_TOKEN` to push the image-tag manifest update to the repository.
+- The GitHub token must remain valid and have the required repository write permissions. If it expires or is revoked, the automated manifest-update step must be repaired or the token renewed. This does not affect either local run option.
+- AKS has permission to pull application images from ACR.
+- Azure Pipelines has registry-scoped permissions for image publishing.
+- Argo CD performs Kubernetes synchronization while AKS is running.
 
-| Resource | Configuration |
+Do not place tokens, passwords, private keys or service-connection credentials in the repository.
+
+## Azure infrastructure
+
+The maintainer's deployment uses the following Azure resource types:
+
+| Resource | Purpose |
 |---|---|
-| Resource Group | Azure Resource Group |
-| AKS Cluster | Azure Kubernetes Service |
-| Container Registry | Azure Container Registry |
-| Container Registry Tier | Basic |
-| Kubernetes Namespace | `the-choice` |
-| Container Image | `the-choice` |
+| Resource Group | Groups related project resources. |
+| AKS Cluster | Runs the Kubernetes application and PostgreSQL workloads. |
+| Container Registry | Stores versioned `the-choice` application images. |
+| Kubernetes Namespace | Separates application resources in `the-choice`. |
+| Managed Disk | Provides persistent storage for PostgreSQL. |
 
-The Azure DevOps service connection uses Workload Identity Federation instead of a stored Azure client secret.
+The Azure Container Registry uses the Basic tier in the recorded implementation. Actual resource names, subscription identifiers and credentials are deliberately not required by the local setup instructions.
 
-AKS is granted permission to pull application images from ACR. Azure Pipelines has registry-scoped permissions for image publishing, while Argo CD manages Kubernetes synchronization.
+## Secrets and configuration
 
-## Secrets and Configuration
-
-The project keeps sensitive configuration outside source control.
+The project keeps sensitive configuration outside source control:
 
 - Local application configuration is stored in `.env`, which is excluded by `.gitignore`.
-- Azure Pipelines stores the GitHub Personal Access Token as a secret variable named `GITHUB_TOKEN`.
+- Azure Pipelines stores the GitHub token as a secret variable named `GITHUB_TOKEN`.
 - Kubernetes database credentials and the Flask secret key are stored in a Kubernetes Secret named `the-choice-secrets`.
-- Azure Pipelines authenticates to Azure using Workload Identity Federation.
+- Azure Pipelines authenticates to Azure using Workload Identity Federation rather than a stored Azure client secret.
 
-Never commit passwords, access tokens, private keys or production secrets to GitHub.
+Never commit passwords, access tokens, private keys or production secrets to GitHub. Use placeholder values in documentation and keep real credentials in local environment files or the relevant secret-management service.
 
-## Project Status
+## Project status
 
-The main application and automated deployment workflow are implemented and verified.
+The main application and automated Azure delivery workflow have been implemented and verified in the maintainer's environment.
 
-The project demonstrates a complete automated delivery chain:
+The project demonstrates:
 
 - Automated application testing.
 - Container image building.
@@ -405,8 +487,9 @@ The project demonstrates a complete automated delivery chain:
 - Automated GitOps manifest updates.
 - Argo CD synchronization.
 - Successful application rollout on Azure Kubernetes Service.
+- Two documented local ways to run the application: directly with Python and with Compose.
 
-The resulting workflow allows a successful application change pushed to the `main` branch to progress through testing, image publishing and Kubernetes deployment without manually executing build or deployment commands.
+The Azure deployment is a portfolio demonstration and may not be running continuously. The local run instructions are the supported way for repository visitors to explore the application without depending on the maintainer's cloud resources.
 
 ---
 
