@@ -1,5 +1,7 @@
 # The Choice — Azure CI/CD & GitOps
 
+![alt text](image.png)
+
 An interactive, branching-choice web application built with Python, Flask and PostgreSQL, deployed to Azure Kubernetes Service (AKS) using Azure Pipelines, Azure Container Registry (ACR) and Argo CD.
 
 This project is a hands-on DevOps portfolio project demonstrating automated testing, containerization, continuous integration, continuous delivery and GitOps-based Kubernetes deployments.
