@@ -9,7 +9,7 @@ import psycopg
 QUESTIONS = [
     (
         "START",
-        "A choice stands before you. One path reveals what is hidden while "
+        "A choice stands before you. One path reveals what is hidden, while "
         "the other preserves the world you know. Which one will you choose?",
         True,
     ),
@@ -53,8 +53,8 @@ QUESTIONS = [
 
 OPTIONS = [
     # Starting question
-    ("START", "R", "Look beyond the reality you know.", "RED_1", 1),
-    ("START", "B", "Preserve the reality you understand.", "BLUE_1", 2),
+    ("START", "R", "Look beyond the reality you know", "RED_1", 1),
+    ("START", "B", "Preserve the reality you understand", "BLUE_1", 2),
 
     # Second question: RED
     (
