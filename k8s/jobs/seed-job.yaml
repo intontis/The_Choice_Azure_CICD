@@ -53,7 +53,7 @@ spec:
 
       containers:
         - name: seed
-          image: thechoice05e289c7.azurecr.io/the-choice:v0.1.0
+          image: thechoice05e289c7.azurecr.io/the-choice:16
           imagePullPolicy: IfNotPresent
 
           command:
