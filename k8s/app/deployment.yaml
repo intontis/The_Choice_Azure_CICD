@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: thechoice05e289c7.azurecr.io/the-choice:15
+          image: thechoice05e289c7.azurecr.io/the-choice:16
           imagePullPolicy: IfNotPresent
 
           ports:
