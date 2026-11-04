@@ -1,6 +1,6 @@
 # The Choice — Azure CI/CD & GitOps
 
-![The Choice application homepage](docs/images/image.png)
+![The Choice application homepage](images/image.png)
 
 An interactive, branching-choice web application built with Python, Flask and PostgreSQL. The application can be run locally in two ways: directly with Python and PostgreSQL, or as a containerized stack with Compose. The project also includes an Azure Kubernetes Service (AKS) deployment used to demonstrate CI/CD and GitOps.
 
